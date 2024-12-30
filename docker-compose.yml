@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:latest
+    ports:
+      - "8000:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - service1_1
+      - service1_2
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 5s
+      timeout: 20s
+      retries: 5
+
+  service1_1:
+    build: ./consumer_service
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - SERVICE_NAME=service1_1
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  service1_2:
+    build: ./consumer_service
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - SERVICE_NAME=service1_2
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  service2_1:
+    build: ./provider_service
+    ports:
+      - "8003:5000"
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - SERVICE_NAME=service2_1
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  service2_2:
+    build: ./provider_service
+    ports:
+      - "8004:5000"
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - SERVICE_NAME=service2_2
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  service2_3:
+    build: ./provider_service
+    ports:
+      - "8005:5000"
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - SERVICE_NAME=service2_3
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
